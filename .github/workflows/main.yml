@@ -1,0 +1,51 @@
+name: Daily CSV Download
+
+on:
+  schedule:
+    - cron: "30 2 * * *"   # 2:00 AM IST (20:30 UTC)
+  workflow_dispatch:        # Manual run support
+
+jobs:
+  download_csv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up date variable
+        id: date
+        run: |
+            echo "YEAR=$(date -u +'%Y')" >> $GITHUB_ENV
+            echo "MONTH=$(date -u +'%m')" >> $GITHUB_ENV
+            echo "DAY=$(date -u +'%d')" >> $GITHUB_ENV
+
+      - name: Create date folder
+        run: mkdir -p datafeed/raw_files/${{ env.YEAR }}/${{ env.MONTH }}/${{ env.DAY }}
+        
+      - name: Download CSV Files
+        run: |
+             urls=(
+             "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv"
+             "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_AUTONOMOUS_TECH._&_ROBOTICS_ETF_ARKQ_HOLDINGS.csv"
+             "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_NEXT_GENERATION_INTERNET_ETF_ARKW_HOLDINGS.csv"
+             "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_GENOMIC_REVOLUTION_ETF_ARKG_HOLDINGS.csv"
+             "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_FINTECH_INNOVATION_ETF_ARKF_HOLDINGS.csv"
+             "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_SPACE_EXPLORATION_&_INNOVATION_ETF_ARKX_HOLDINGS.csv"
+             "https://assets.ark-funds.com/fund-documents/funds-etf-csv/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"
+             )
+
+             for url in "${urls[@]}"; do
+             filename=$(basename "$url")
+             curl -L "$url" -o "datafeed/raw_files/${{ env.YEAR }}/${{ env.MONTH }}/${{ env.DAY }}/$filename"
+             done
+
+      - name: Commit & Push changes
+        run: |
+          git config user.email "${{ secrets.GIT_EMAIL }}"
+          git config user.name "${{ secrets.GIT_NAME }}"
+          git add .
+          git commit -m "Downloaded CSV for ${{ env.TODAY }}" || echo "No changes to commit"
+          git push
