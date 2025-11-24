@@ -17,13 +17,10 @@ jobs:
 
       - name: Set up date variable
         id: date
-        run: |
-            echo "YEAR=$(date -u +'%Y')" >> $GITHUB_ENV
-            echo "MONTH=$(date -u +'%m')" >> $GITHUB_ENV
-            echo "DAY=$(date -u +'%d')" >> $GITHUB_ENV
+        run: echo "TODAY=$(date -u +'%Y-%m-%d')" >> $GITHUB_ENV
 
       - name: Create date folder
-        run: mkdir -p datafeed/raw_files/${{ env.YEAR }}/${{ env.MONTH }}/${{ env.DAY }}
+        run: mkdir -p datafeed/raw_files/${{ env.TODAY }}
         
       - name: Download CSV Files
         run: |
@@ -41,9 +38,6 @@ jobs:
              filename=$(basename "$url")
              curl -L "$url" -o "datafeed/raw_files/${{ env.YEAR }}/${{ env.MONTH }}/${{ env.DAY }}/$filename"
              done
-             
-      - name: List downloaded files
-        run: ls -R datafeed/raw_files/${{ env.YEAR }}/${{ env.MONTH }}/${{ env.DAY }}
 
       - name: Commit & Push changes
         run: |
