@@ -16,11 +16,10 @@ jobs:
           persist-credentials: true
 
       - name: Set up date variable
-        id: date
-        run: echo "TODAY=$(date -u +'%Y-%m-%d')" >> $GITHUB_ENV
+        run: echo "DATEID=$(date -u +'%Y%m%d')" >> $GITHUB_ENV
 
       - name: Create date folder
-        run: mkdir -p datafeed/raw_files/${{ env.TODAY }}
+        run: mkdir -p datafeed/raw_files
         
       - name: Download CSV Files
         run: |
@@ -35,9 +34,14 @@ jobs:
              )
 
              for url in "${urls[@]}"; do
-             filename=$(basename "$url")
-             curl -L "$url" -o "datafeed/raw_files/${{ env.YEAR }}/${{ env.MONTH }}/${{ env.DAY }}/$filename"
+             original=$(basename "$url")
+             newname="${{ env.DATEID }}-${original}"
+             curl -L "$url" -o "datafeed/raw_files/$newname"
              done
+     
+      - name: Delete files older than 60 days
+        run: |
+          find datafeed/raw_files -type f -mtime +60 -print -delete
 
       - name: Commit & Push changes
         run: |
